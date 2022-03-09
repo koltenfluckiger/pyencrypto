@@ -94,6 +94,8 @@ This is an example of how to list things you need to use the software and how to
 2.  Install PIP package
     ```sh
     pip3 install -e pyencrypto
+    or
+    python setup.py install
     ```
 
 <!-- USAGE EXAMPLES -->
