@@ -20,7 +20,8 @@ class Crypter:
     key : bytes
         Key to decrypt and encrypte files in bytes. (the default is None).
     """
-    def __init__(self, key:bytes=None, magic_str:str="pyencrypto"):
+
+    def __init__(self, key: bytes = None, magic_str: str = "pyencrypto"):
         """Constructs all the necessary attributes for the crypter object.
 
         Parameters
@@ -53,7 +54,8 @@ class Crypter:
             self.signer = msg
         except Exception as err:
             print(err)
-    def generate_key(self, write:bool=False, path:Union[str,PathType]= None, overwrite:bool=False):
+
+    def generate_key(self, write: bool = False, path: Union[str, PathType] = None, overwrite: bool = False):
         """Generates a key to use for your current session. I would recommend saving this key somewhere as you can't access files encrypted without it.
         Parameters
 
@@ -79,7 +81,8 @@ class Crypter:
             return key
         except Exception as err:
             print(err)
-    def load_key_from_file(self, path:Union[str,PathType]):
+
+    def load_key_from_file(self, path: Union[str, PathType]):
         """Short summary.
 
         Parameters
@@ -99,7 +102,7 @@ class Crypter:
         except Exception as err:
             print(err)
 
-    def set_key_session(self, key:Union[str,bytes]=None) -> None:
+    def set_key_session(self, key: Union[str, bytes] = None) -> None:
         """Set the key to the Fernet session either from self or through parameter.
 
         Parameters
@@ -122,11 +125,12 @@ class Crypter:
             elif key:
                 self.session = Fernet(key)
             else:
-                raise EncryptoMissingKeyError("No key provided in set key session...")
+                raise EncryptoMissingKeyError(
+                    "No key provided in set key session...")
         except Exception as err:
             print(f"set_key_session: {err}")
 
-    def sign(self, bytes:bytes):
+    def sign(self, bytes: bytes):
         """Sign the bytes with a custom hash
 
         Parameters
@@ -145,11 +149,12 @@ class Crypter:
             If the file is already encrypted with the same hash it won't let you encrypt it again.
         """
         if bytes[:len(self.signer)] == self.signer:
-            raise EncryptoAlreadyEncryptedError("Object is already encrypted. Quitting...")
+            raise EncryptoAlreadyEncryptedError(
+                "Object is already encrypted. Quitting...")
         else:
             return b''.join([self.signer, bytes])
 
-    def remove_sign(self, signed_bytes:bytes):
+    def remove_sign(self, signed_bytes: bytes):
         """Removed the custom hash from the bytes
         Parameters
         ----------
@@ -170,7 +175,7 @@ class Crypter:
         except Exception as err:
             print(f"remove_sign: {err}")
 
-    def write_bytes_at_path(self, path:Union[str,PathType], bytes:bytes) -> None:
+    def write_bytes_at_path(self, path: Union[str, PathType], bytes: bytes) -> None:
         """Short summary.
 
         Parameters
@@ -196,7 +201,7 @@ class Crypter:
         except Exception as err:
             print(err)
 
-    def read_bytes_at_path(self, path:Union[str,PathType]) -> bytes:
+    def read_bytes_at_path(self, path: Union[str, PathType]) -> bytes:
         """Short summary.
 
         Parameters
@@ -222,7 +227,7 @@ class Crypter:
         except Exception as err:
             print(err)
 
-    def encrypt_bytes(self, bytes:bytes) -> bytes:
+    def encrypt_bytes(self, bytes: bytes) -> bytes:
         """Encrypt the bytes and sign it with the key that is set to the session.
 
         Parameters
@@ -240,7 +245,7 @@ class Crypter:
         except Exception as err:
             print(err)
 
-    def decrypt_bytes(self, bytes:bytes) -> bytes:
+    def decrypt_bytes(self, bytes: bytes) -> bytes:
         """Decrypt the bytes and sign it with the key that is set to the session.
 
         Parameters
@@ -258,7 +263,7 @@ class Crypter:
         except Exception as err:
             print(err)
 
-    def encrypt(self, path:Union[str,PathType]) -> None:
+    def encrypt(self, path: Union[str, PathType]) -> None:
         """Encrypt the object at the path. This encrypts the bytes with the key, then writes the bytes to the path.
 
         Parameters
@@ -276,7 +281,8 @@ class Crypter:
         """
         try:
             if not self.session:
-                raise Exception("You haven't set a key yet to encrypt with. Please generate a key and make sure you save it.")
+                raise Exception(
+                    "You haven't set a key yet to encrypt with. Please generate a key and make sure you save it.")
                 exit()
             path = pathlib.Path(path).resolve()
             read_bytes = self.read_bytes_at_path(path)
@@ -288,7 +294,7 @@ class Crypter:
             print(err)
             exit()
 
-    def decrypt(self, path:Union[str,PathType]) -> None:
+    def decrypt(self, path: Union[str, PathType]) -> None:
         """Decrypt the object at the path. This decrypts the bytes with the key, then writes the bytes to the path.
 
         Parameters
@@ -306,7 +312,8 @@ class Crypter:
         """
         try:
             if not self.session:
-                raise Exception("You haven't set a key yet to decrypt with. Please generate a key and make sure you save it.")
+                raise Exception(
+                    "You haven't set a key yet to decrypt with. Please generate a key and make sure you save it.")
             path = pathlib.Path(path).resolve()
             read_bytes = self.read_bytes_at_path(path)
             unsigned_bytes = self.remove_sign(read_bytes)
@@ -319,19 +326,3 @@ class Crypter:
         except Exception as err:
             print(err)
             exit()
-
-    def encrypt_message(self, message:Union[str,bytes]) -> None:
-        try:
-            if type(message) == str:
-                message = message.decode()
-            hash = hmac.HMAC(key, hashes.SHA256())
-            hash.update(message)
-            signature = h.finalize()
-        except Exception as err:
-            print(err)
-
-    def decrypt_message(self, message:bytes) -> str:
-        try:
-            pass
-        except Exception as err:
-            print(err)
