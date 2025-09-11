@@ -1,0 +1,20 @@
+[project]
+name = "pyencrypto"
+version = "1.2"
+description = "Python encryption module to help make the process easier for encryption data and decrypting."
+readme = "README.md"
+authors = [
+    { name = "Kolten Fluckiger", email = "wrtunder@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography",
+    "pathlib",
+]
+packages = [
+    { include = "src" },
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
