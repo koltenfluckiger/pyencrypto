@@ -1,57 +1,77 @@
-from typing import Union
-from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1
-from cryptography.hazmat.primitives import hashes
-import traceback
 import base64
+
+from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+from cryptography.hazmat.primitives import hashes
+
+from ..keyer import Keyer
+
+_DEFAULT_PADDING = OAEP(
+    mgf=MGF1(algorithm=hashes.SHA512()),
+    algorithm=hashes.SHA512(),
+    label=None,
+)
 
 
 class Messenger:
+    """Encrypt and decrypt string/bytes messages using RSA asymmetric keys.
 
-    def __init__(self, keyer):
+    Wraps a Keyer's public/private key pair for simple message-level encryption
+    with optional base64 encoding for transport safety.
+    """
+
+    public_key: RSAPublicKey
+    private_key: RSAPrivateKey
+
+    def __init__(self, keyer: Keyer):
+        if not keyer.public_key or not keyer.private_key:
+            raise ValueError("Keyer must have both public and private keys loaded.")
+        if not isinstance(keyer.public_key, RSAPublicKey):
+            raise TypeError("Messenger requires RSA keys. Got: " + type(keyer.public_key).__name__)
+        if not isinstance(keyer.private_key, RSAPrivateKey):
+            raise TypeError("Messenger requires RSA keys. Got: " + type(keyer.private_key).__name__)
         self.public_key = keyer.public_key
         self.private_key = keyer.private_key
 
-    def encrypt_message(self, message: Union[str, bytes], padding=OAEP(
-        mgf=MGF1(algorithm=hashes.SHA512()), algorithm=hashes.SHA512(), label=None
-    ), send_safe: bool = True) -> None:
-        """Encrypt a string with the key from the session.
+    def encrypt_message(
+        self,
+        message: str | bytes,
+        padding: OAEP = _DEFAULT_PADDING,
+        send_safe: bool = True,
+    ) -> str | bytes:
+        """Encrypt a message.
 
-        Parameters
-        ----------
-        message : Union[str,bytes]
-            The message you want to encrypt either in string or bytes format.
-        Returns
-            None
+        Returns a base64-encoded string if send_safe=True, raw encrypted bytes otherwise.
         """
-        try:
-            if type(message) == str:
-                message = message.encode()
-            if send_safe:
-                return self.encode_message(self.public_key.encrypt(message, padding)).decode()
-            else:
-                return self.public_key.encrypt(message, padding).decode()
-        except Exception as err:
-            traceback.print_exc()
+        if isinstance(message, str):
+            message = message.encode()
+        encrypted = self.public_key.encrypt(message, padding)
+        if send_safe:
+            return base64.b64encode(encrypted).decode()
+        return encrypted
 
-    def decrypt_message(self, message: bytes, padding=OAEP(
-        mgf=MGF1(algorithm=hashes.SHA512()), algorithm=hashes.SHA512(), label=None
-    ), send_safe: bool = True) -> str:
-        try:
-            if send_safe:
-                message = self.decode_message(message)
-            message = self.private_key.decrypt(message, padding)
-            return message.decode()
-        except Exception as err:
-            traceback.print_exc()
+    def decrypt_message(
+        self,
+        message: str | bytes,
+        padding: OAEP = _DEFAULT_PADDING,
+        send_safe: bool = True,
+    ) -> str:
+        """Decrypt a message back to a string.
 
-    def encode_message(self, message: bytes):
-        try:
-            return base64.b64encode(message)
-        except Exception as err:
-            traceback.print_exc()
+        Expects base64-encoded input if send_safe=True.
+        """
+        raw: bytes = base64.b64decode(message) if send_safe else (
+            message.encode() if isinstance(message, str) else message
+        )
+        decrypted = self.private_key.decrypt(raw, padding)
+        return decrypted.decode()
 
-    def decode_message(self, message: bytes):
-        try:
-            return base64.b64decode(message)
-        except Exception as err:
-            traceback.print_exc()
+    @staticmethod
+    def encode_message(message: bytes) -> bytes:
+        """Base64-encode bytes."""
+        return base64.b64encode(message)
+
+    @staticmethod
+    def decode_message(message: str | bytes) -> bytes:
+        """Base64-decode bytes."""
+        return base64.b64decode(message)

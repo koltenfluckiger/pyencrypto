@@ -1,6 +1,5 @@
-from .crypter import Crypter
+from .crypter import Crypter as Crypter
 from .exceptions import (
-    EncryptoAlreadyDecryptedError,
-    EncryptoAlreadyEncryptedError,
+    EncryptoAlreadyDecryptedError as EncryptoAlreadyDecryptedError,
+    EncryptoAlreadyEncryptedError as EncryptoAlreadyEncryptedError,
 )
-from ..keyer import Keyer
