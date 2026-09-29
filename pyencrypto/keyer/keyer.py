@@ -42,6 +42,13 @@ def _convert_public_key(public_key: PublicKeyTypes, to: KEYEXT) -> bytes:
     return public_key.public_bytes(encoding=encoding, format=fmt)
 
 
+def _load_public_key_bytes(key_bytes: bytes) -> PublicKeyTypes:
+    """Load a public key from PEM or OpenSSH (e.g. ``ssh-rsa AAAA...``) bytes."""
+    if key_bytes.lstrip().startswith((b"ssh-", b"ecdsa-")):
+        return serialization.load_ssh_public_key(key_bytes)
+    return serialization.load_pem_public_key(key_bytes)
+
+
 class Keyer:
 
     private_key: PrivateKeyTypes | None = None
@@ -198,7 +205,7 @@ class Keyer:
 
     def load_public_key(
         self,
-        key: bytes | None = None,
+        key: bytes | str | PublicKeyTypes | None = None,
         key_path: str | Path | None = None,
         password: str | None = None,
     ) -> PublicKeyTypes:
@@ -208,11 +215,15 @@ class Keyer:
             self.public_key = self.private_key.public_key()
             return self.public_key
         elif key:
-            self.public_key = serialization.load_pem_public_key(key)
+            if isinstance(key, (bytes, str)):
+                key_bytes = key.encode() if isinstance(key, str) else key
+                self.public_key = _load_public_key_bytes(key_bytes)
+            else:
+                self.public_key = key
             return self.public_key
         elif key_path:
             key_bytes = Path(key_path).resolve().read_bytes()
-            self.public_key = serialization.load_pem_public_key(key_bytes)
+            self.public_key = _load_public_key_bytes(key_bytes)
             return self.public_key
         else:
             raise EncryptoMissingKeyError("No key source available to load public key.")
